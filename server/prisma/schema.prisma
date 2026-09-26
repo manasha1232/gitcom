@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(uuid())
+  email            String?   @unique
+  name             String?
+  githubUsername   String?
+  githubToken      String?
+  projects         Project[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Project {
+  id                  String           @id @default(uuid())
+  name                String
+  description         String
+  durationDays        Int              @default(20)
+  commitsPerDay       Int              @default(15)
+  totalPlannedCommits Int              @default(300)
+  status              String           @default("IDLE") // IDLE, ANALYZING, PLAN_READY, RUNNING, PAUSED, COMPLETED, FAILED
+  currentDay          Int              @default(1)
+  currentTaskIndex    Int              @default(0)
+  totalTasks          Int              @default(0)
+  completedTasks      Int              @default(0)
+  failedTasks         Int              @default(0)
+  overallProgress     Float            @default(0.0)
+  testsPassingPct     Float            @default(100.0)
+  currentTaskTitle    String?
+  agentState          String           @default("IDLE") // IDLE, WORKING, TESTING, COMMITTING, PUSHING, PAUSED, ERROR
+  githubRepoUrl       String?
+  githubBranch        String           @default("main")
+  localRepoPath       String?
+  userId              String?
+  user                User?            @relation(fields: [userId], references: [id])
+  plan                DevelopmentPlan?
+  repository          Repository?
+  commits             Commit[]
+  logs                ExecutionLog[]
+  files               ProjectFile[]
+  agentRuns           AgentRun[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+}
+
+model DevelopmentPlan {
+  id                String   @id @default(uuid())
+  projectId         String   @unique
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  summary           String
+  applicationType   String
+  frontendStack     String
+  backendStack      String
+  databaseStack     String
+  authStrategy      String
+  apiStructure      String
+  aiFeatures        String
+  testingStrategy   String?
+  deploymentConfig  String?
+  architectureNotes String?
+  days              Day[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Day {
+  id          String          @id @default(uuid())
+  planId      String
+  plan        DevelopmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  dayNumber   Int
+  title       String
+  focusArea   String
+  status      String          @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  tasks       Task[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Task {
+  id              String   @id @default(uuid())
+  dayId           String
+  day             Day      @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  taskNumber      Int
+  title           String
+  description     String
+  category        String   // FEATURE, COMPONENT, BACKEND_API, DATABASE_MODEL, TEST, BUG_FIX, VALIDATION, AUTH, UI, REFACTOR, DOCS, DEPLOYMENT, ERROR_HANDLING, PERFORMANCE, AI_FEATURE
+  order           Int
+  status          String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, FAILED, SKIPPED
+  prerequisites   String   @default("[]") // JSON string array of task IDs or titles
+  targetFiles     String   @default("[]") // JSON string array
+  expectedChanges String?
+  reasoning       String?
+  retries         Int      @default(0)
+  errorLog        String?
+  commit          Commit?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Commit {
+  id             String      @id @default(uuid())
+  projectId      String
+  project        Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId         String?     @unique
+  task           Task?       @relation(fields: [taskId], references: [id])
+  dayNumber      Int
+  commitNumber   Int         @default(1)
+  commitHash     String
+  shortHash      String
+  message        String
+  authorName     String      @default("CommitFlow Agent")
+  authorEmail    String      @default("agent@commitflow.ai")
+  filesChanged   String      @default("[]") // JSON string array of paths
+  filesCount     Int         @default(1)
+  diffSummary    String?
+  status         String      @default("COMMITTED") // COMMITTED, PUSHED, FAILED
+  testResult     String?     // PASS, FAIL, SKIPPED
+  testDetails    String?
+  aiReasoning    String?
+  pushedToRemote Boolean     @default(false)
+  pushedDate     DateTime?
+  createdAt      DateTime    @default(now())
+}
+
+model Repository {
+  id             String    @id @default(uuid())
+  projectId      String    @unique
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  repoUrl        String?
+  repoName       String?
+  owner          String?
+  defaultBranch  String    @default("main")
+  localPath      String
+  isCloned       Boolean   @default(false)
+  isConnected    Boolean   @default(false)
+  lastCommitHash String?
+  lastSyncAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model ExecutionLog {
+  id         String    @id @default(uuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  agentRunId String?
+  agentRun   AgentRun? @relation(fields: [agentRunId], references: [id])
+  level      String    @default("INFO") // INFO, SUCCESS, WARN, ERROR, AGENT
+  step       String    @default("SYSTEM") // ANALYZE, SELECT_TASK, GENERATE_CODE, SYNTAX_CHECK, TEST, COMMIT, PUSH, SYSTEM
+  message    String
+  details    String?
+  timestamp  DateTime  @default(now())
+}
+
+model ProjectFile {
+  id                 String   @id @default(uuid())
+  projectId          String
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  filePath           String
+  fileType           String   @default("code")
+  size               Int      @default(0)
+  content            String?
+  lastModifiedTaskId String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([projectId, filePath])
+}
+
+model AgentRun {
+  id             String         @id @default(uuid())
+  projectId      String
+  project        Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status         String         @default("IDLE") // RUNNING, IDLE, PAUSED, STOPPED, FAILED, COMPLETED
+  currentAction  String?
+  commitsCreated Int            @default(0)
+  tasksCompleted Int            @default(0)
+  errorCount     Int            @default(0)
+  startTime      DateTime       @default(now())
+  endTime        DateTime?
+  logs           ExecutionLog[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model SystemSettings {
+  id               String   @id @default("global-settings")
+  githubToken      String?
+  githubUsername   String?
+  gitAuthorName    String?  @default("Vidhushaaa30")
+  gitAuthorEmail   String?  @default("vidhushanagarajan30@gmail.com")
+  aiProvider       String   @default("autonomous_builtin") // autonomous_builtin, gemini, openai, anthropic
+  aiApiKey         String?
+  aiModel          String   @default("gemini-2.0-flash")
+  autoPushOnCommit Boolean  @default(false)
+  executionSpeedMs Int      @default(2500)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
