@@ -6,6 +6,8 @@ WORKDIR /app
 # Install git and dependencies
 RUN apk add --no-cache git python3 make g++
 
+ENV DATABASE_URL="file:./dev.db"
+
 # Copy package descriptors
 COPY server/package*.json ./server/
 COPY client/package*.json ./client/
@@ -32,6 +34,7 @@ RUN apk add --no-cache git
 
 ENV NODE_ENV=production
 ENV PORT=5000
+ENV DATABASE_URL="file:./dev.db"
 
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/client/dist ./client/dist
