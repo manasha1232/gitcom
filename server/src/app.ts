@@ -67,6 +67,24 @@ app.get('/events', (req: Request, res: Response) => {
   });
 });
 
+import path from 'path';
+
+// Serve static frontend files in production mode
+const clientDistPath = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientDistPath));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path === '/events') {
+    return next();
+  }
+  const indexPath = path.join(clientDistPath, 'index.html');
+  if (require('fs').existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    next();
+  }
+});
+
 // 404 handler
 app.use((_req, res) => {
   res.status(404).json({ success: false, error: 'Route not found' });

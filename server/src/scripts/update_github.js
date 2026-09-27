@@ -5,12 +5,12 @@ async function main() {
   await prisma.systemSettings.upsert({
     where: { id: 'global-settings' },
     update: {
-      githubUsername: 'Vidhushaaa30',
+      githubUsername: 'manasha1232',
       autoPushOnCommit: true,
     },
     create: {
       id: 'global-settings',
-      githubUsername: 'Vidhushaaa30',
+      githubUsername: 'manasha1232',
       autoPushOnCommit: true,
     },
   });

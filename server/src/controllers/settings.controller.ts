@@ -27,8 +27,8 @@ export async function getSettings(req: Request, res: Response) {
     // Mask secrets
     const safe = {
       ...settings,
-      gitAuthorName: settings.gitAuthorName || settings.githubUsername || 'Vidhushaaa30',
-      gitAuthorEmail: settings.gitAuthorEmail || 'vidhushanagarajan30@gmail.com',
+      gitAuthorName: settings.gitAuthorName || settings.githubUsername || 'manasha1232',
+      gitAuthorEmail: settings.gitAuthorEmail || '209326007+manasha1232@users.noreply.github.com',
       githubToken: settings.githubToken ? `${settings.githubToken.slice(0, 8)}...` : null,
       aiApiKey: settings.aiApiKey ? `${settings.aiApiKey.slice(0, 8)}...` : null,
     };

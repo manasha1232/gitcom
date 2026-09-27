@@ -52,11 +52,33 @@ The client will run on `http://localhost:5173`.
 
 ---
 
+## 🌐 Cloud Deployment Guide
+
+### Option 1: Deploy on Render (Recommended Blueprint)
+1. Push repository to GitHub.
+2. Sign in to [Render](https://render.com/).
+3. Click **New +** -> **Blueprint**.
+4. Connect this repository — Render will automatically detect `render.yaml` and provision your unified full-stack web service!
+
+### Option 2: Deploy using Docker
+Build and run the container:
+```bash
+docker build -t commitflow-ai .
+docker run -p 5000:5000 commitflow-ai
+```
+
+### Option 3: Dual Hosting (Vercel Frontend + Render/Railway Backend)
+1. Deploy `server` folder to Render/Railway as a Node Web Service.
+2. Update `client/vercel.json` with your backend server URL.
+3. Deploy `client` folder to Vercel.
+
+---
+
 ## ⚙️ Configuration
 
 Set your GitHub personal access token and commit identity in the **Settings** page:
-- **Git Author Name**: e.g., `Vidhushaaa30`
-- **Git Author Email**: e.g., `vidhushanagarajan30@gmail.com`
+- **Git Author Name**: e.g., `manasha1232`
+- **Git Author Email**: e.g., `209326007+manasha1232@users.noreply.github.com`
 - **Execution Speed & Auto-push toggles**
 
 ---

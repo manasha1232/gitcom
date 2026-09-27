@@ -23,8 +23,8 @@ export class GitService {
   async initRepository(
     repoPath: string,
     defaultBranch = 'main',
-    authorName = 'Vidhushaaa30',
-    authorEmail = 'vidhushanagarajan30@gmail.com'
+    authorName = 'manasha1232',
+    authorEmail = '209326007+manasha1232@users.noreply.github.com'
   ): Promise<{ initialCommitHash?: string }> {
     await this.ensureDirectory(repoPath);
     const git = this.getGit(repoPath);
@@ -129,8 +129,8 @@ coverage/
   async createCommit(
     repoPath: string,
     message: string,
-    authorName = 'Vidhushaaa30',
-    authorEmail = 'vidhushanagarajan30@gmail.com'
+    authorName = 'manasha1232',
+    authorEmail = '209326007+manasha1232@users.noreply.github.com'
   ): Promise<CommitResult> {
     const git = this.getGit(repoPath);
 

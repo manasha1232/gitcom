@@ -31,11 +31,11 @@ export class AgentEngine {
   async getGitAuthorConfig(): Promise<{ authorName: string; authorEmail: string }> {
     try {
       const settings = await prisma.systemSettings.findFirst();
-      const authorName = settings?.gitAuthorName || settings?.githubUsername || 'Vidhushaaa30';
-      const authorEmail = settings?.gitAuthorEmail || 'vidhushanagarajan30@gmail.com';
+      const authorName = settings?.gitAuthorName || settings?.githubUsername || 'manasha1232';
+      const authorEmail = settings?.gitAuthorEmail || '209326007+manasha1232@users.noreply.github.com';
       return { authorName, authorEmail };
     } catch {
-      return { authorName: 'Vidhushaaa30', authorEmail: 'vidhushanagarajan30@gmail.com' };
+      return { authorName: 'manasha1232', authorEmail: '209326007+manasha1232@users.noreply.github.com' };
     }
   }
 

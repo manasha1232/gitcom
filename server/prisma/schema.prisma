@@ -194,8 +194,8 @@ model SystemSettings {
   id               String   @id @default("global-settings")
   githubToken      String?
   githubUsername   String?
-  gitAuthorName    String?  @default("Vidhushaaa30")
-  gitAuthorEmail   String?  @default("vidhushanagarajan30@gmail.com")
+  gitAuthorName    String?  @default("manasha1232")
+  gitAuthorEmail   String?  @default("209326007+manasha1232@users.noreply.github.com")
   aiProvider       String   @default("autonomous_builtin") // autonomous_builtin, gemini, openai, anthropic
   aiApiKey         String?
   aiModel          String   @default("gemini-2.0-flash")

@@ -162,7 +162,7 @@ export default function Settings() {
             <input
               type="text"
               className="input font-mono"
-              placeholder="e.g. Vidhushaaa30"
+              placeholder="e.g. manasha1232"
               value={settings.gitAuthorName ?? ''}
               onChange={(e) => setSettings((s) => ({ ...s, gitAuthorName: e.target.value }))}
             />
@@ -173,7 +173,7 @@ export default function Settings() {
             <input
               type="email"
               className="input font-mono"
-              placeholder="e.g. vidhushanagarajan30@gmail.com"
+              placeholder="e.g. 209326007+manasha1232@users.noreply.github.com"
               value={settings.gitAuthorEmail ?? ''}
               onChange={(e) => setSettings((s) => ({ ...s, gitAuthorEmail: e.target.value }))}
             />
