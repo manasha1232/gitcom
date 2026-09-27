@@ -207,6 +207,7 @@ export class AgentEngine {
       await this.log(projectId, 'INFO', 'COMMIT', `Staging repository changes and crafting conventional commit...`);
 
       const commitPrefix = this.getCommitPrefix(task.category);
+      const commitMessage = `${commitPrefix}: ${task.title.toLowerCase()}`;
       const { authorName, authorEmail } = await this.getGitAuthorConfig();
       const commitResult = await gitService.createCommit(repoPath, commitMessage, authorName, authorEmail);
       await this.log(
