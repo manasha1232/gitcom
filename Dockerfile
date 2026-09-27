@@ -3,8 +3,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install git and dependencies
-RUN apk add --no-cache git python3 make g++
+# Install git, openssl, and build dependencies for Alpine
+RUN apk add --no-cache git python3 make g++ openssl libc6-compat
 
 ENV DATABASE_URL="file:./dev.db"
 
@@ -30,7 +30,8 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-RUN apk add --no-cache git
+# Install runtime dependencies for Alpine
+RUN apk add --no-cache git openssl libc6-compat
 
 ENV NODE_ENV=production
 ENV PORT=5000
