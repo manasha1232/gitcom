@@ -3,12 +3,13 @@ import {
   createProject, listProjects, getProject, deleteProject,
   generatePlan, getPlan,
   startProject, pauseProject, resumeProject, stopProject, runNextTask,
-  getProgress, getCommits, getLogs, getCommitDiff,
+  getProgress, getCommits, getLogs, getCommitDiff, importProjectFromGitHub
 } from '../controllers/project.controller';
 
 const router = Router();
 
 router.post('/', createProject);
+router.post('/import-github', importProjectFromGitHub);
 router.get('/', listProjects);
 router.get('/:id', getProject);
 router.delete('/:id', deleteProject);

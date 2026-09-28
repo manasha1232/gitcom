@@ -42,6 +42,7 @@ export const projectsApi = {
   list: () => api.get<{ success: boolean; data: Project[] }>('/projects'),
   get: (id: string) => api.get<{ success: boolean; data: ProjectDetail }>(`/projects/${id}`),
   create: (body: CreateProjectInput) => api.post<{ success: boolean; data: Project }>('/projects', body),
+  importGitHub: (githubRepoUrl: string) => api.post<{ success: boolean; data: Project }>('/projects/import-github', { githubRepoUrl }),
   update: (id: string, body: Partial<CreateProjectInput>) => api.put<{ success: boolean; data: Project }>(`/projects/${id}`, body),
   delete: (id: string) => api.delete<{ success: boolean }>(`/projects/${id}`),
   generatePlan: (id: string) => api.post<{ success: boolean; data: any }>(`/projects/${id}/generate-plan`),

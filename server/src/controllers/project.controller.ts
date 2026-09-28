@@ -324,3 +324,128 @@ export async function getCommitDiff(req: Request, res: Response) {
     res.status(500).json({ success: false, error: err.message });
   }
 }
+
+// POST /api/projects/import-github
+export async function importProjectFromGitHub(req: Request, res: Response) {
+  try {
+    const userId = (req.headers['x-user-id'] as string) || undefined;
+    const { githubRepoUrl, name: customName, description: customDesc } = req.body;
+
+    if (!githubRepoUrl) {
+      return res.status(400).json({ success: false, error: 'githubRepoUrl is required' });
+    }
+
+    const cleanUrl = githubRepoUrl.replace(/\.git$/, '').replace(/\/$/, '');
+    const parts = cleanUrl.split('/');
+    const repo = parts.pop();
+    const owner = parts.pop();
+
+    if (!owner || !repo) {
+      return res.status(400).json({ success: false, error: 'Invalid GitHub repository URL' });
+    }
+
+    // Get user token if available
+    let token: string | undefined = undefined;
+    if (userId) {
+      const u = await prisma.user.findUnique({ where: { id: userId } });
+      token = u?.githubToken || undefined;
+    }
+
+    const https = require('https');
+    const fetchCommits = (): Promise<any[]> =>
+      new Promise((resolve) => {
+        const headers: any = { 'User-Agent': 'CommitFlow-AI-Platform' };
+        if (token) headers['Authorization'] = `token ${token}`;
+
+        const req = https.request(
+          {
+            hostname: 'api.github.com',
+            path: `/repos/${owner}/${repo}/commits?per_page=100`,
+            method: 'GET',
+            headers,
+          },
+          (res: any) => {
+            let body = '';
+            res.on('data', (c: any) => (body += c));
+            res.on('end', () => {
+              try {
+                if (res.statusCode === 200) {
+                  resolve(JSON.parse(body));
+                } else {
+                  resolve([]);
+                }
+              } catch {
+                resolve([]);
+              }
+            });
+          }
+        );
+        req.on('error', () => resolve([]));
+        req.end();
+      });
+
+    const commits = await fetchCommits();
+    const completedTasks = commits.length;
+    const durationDays = 20;
+    const commitsPerDay = 17;
+    const totalPlannedCommits = durationDays * commitsPerDay;
+    const totalTasks = totalPlannedCommits;
+    const overallProgress = totalTasks > 0 ? Math.min(100, (completedTasks / totalTasks) * 100) : 0;
+    const currentDay = Math.min(durationDays, Math.ceil(completedTasks / commitsPerDay) || 1);
+
+    const projectName = customName || repo.replace(/[-_]/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+    const projectDesc = customDesc || `Imported project from https://github.com/${owner}/${repo} (${completedTasks} commits sync'd).`;
+
+    const project = await prisma.project.create({
+      data: {
+        name: projectName,
+        description: projectDesc,
+        durationDays,
+        commitsPerDay,
+        totalPlannedCommits,
+        totalTasks,
+        completedTasks,
+        currentDay,
+        overallProgress: parseFloat(overallProgress.toFixed(1)),
+        githubRepoUrl: cleanUrl,
+        githubBranch: 'main',
+        status: completedTasks >= totalTasks ? 'COMPLETED' : 'RUNNING',
+        userId: userId || null,
+      },
+    });
+
+    await agentEngine.ensureProjectRepo(project.id, 'main');
+
+    // Recreate commits in database
+    if (commits.length > 0) {
+      for (let i = 0; i < commits.length; i++) {
+        const c = commits[commits.length - 1 - i]; // chronologically
+        const sha = c.sha || `hash_${i}`;
+        const msg = c.commit?.message?.split('\n')[0] || 'Commit';
+        const authorName = c.commit?.author?.name || owner;
+        const authorEmail = c.commit?.author?.email || `${owner}@users.noreply.github.com`;
+
+        await prisma.commit.create({
+          data: {
+            projectId: project.id,
+            dayNumber: Math.ceil((i + 1) / commitsPerDay),
+            commitNumber: i + 1,
+            commitHash: sha,
+            shortHash: sha.substring(0, 7),
+            message: msg,
+            authorName,
+            authorEmail,
+            filesCount: 1,
+            status: 'PUSHED',
+            pushedToRemote: true,
+            pushedDate: new Date(c.commit?.author?.date || Date.now()),
+          },
+        });
+      }
+    }
+
+    res.status(201).json({ success: true, data: project });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
