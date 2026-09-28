@@ -118,22 +118,33 @@ export async function loginWithToken(req: Request, res: Response) {
     });
 
     // Ensure SystemSettings for user
-    const userSettings = await prisma.systemSettings.upsert({
+    const settingId = `settings-${user.id}`;
+    let userSettings = await prisma.systemSettings.findFirst({
       where: { userId: user.id },
-      create: {
-        userId: user.id,
-        githubUsername: username,
-        githubToken: actualToken,
-        gitAuthorName: username,
-        gitAuthorEmail: email || `${username}@users.noreply.github.com`,
-      },
-      update: {
-        githubUsername: username,
-        githubToken: actualToken || undefined,
-        gitAuthorName: username,
-        gitAuthorEmail: email || `${username}@users.noreply.github.com`,
-      },
     });
+
+    if (!userSettings) {
+      userSettings = await prisma.systemSettings.create({
+        data: {
+          id: settingId,
+          userId: user.id,
+          githubUsername: username,
+          githubToken: actualToken,
+          gitAuthorName: username,
+          gitAuthorEmail: email || `${username}@users.noreply.github.com`,
+        },
+      });
+    } else {
+      userSettings = await prisma.systemSettings.update({
+        where: { id: userSettings.id },
+        data: {
+          githubUsername: username,
+          githubToken: actualToken || undefined,
+          gitAuthorName: username,
+          gitAuthorEmail: email || `${username}@users.noreply.github.com`,
+        },
+      });
+    }
 
     res.json({
       success: true,
