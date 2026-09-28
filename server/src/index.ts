@@ -1,15 +1,35 @@
 import app from './app';
 import { prisma } from './prisma';
+import { execSync } from 'child_process';
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
 
 async function main() {
-  // Ensure default settings exist
-  await prisma.systemSettings.upsert({
-    where: { id: 'global-settings' },
-    create: { id: 'global-settings' },
-    update: {},
-  });
+  // Ensure database schema tables exist
+  try {
+    await prisma.systemSettings.upsert({
+      where: { id: 'global-settings' },
+      create: { id: 'global-settings' },
+      update: {},
+    });
+  } catch (err: any) {
+    console.log('[DB] SystemSettings table missing. Running schema db push...');
+    try {
+      execSync('npx prisma db push --accept-data-loss', {
+        cwd: __dirname + '/..',
+        stdio: 'inherit',
+        env: process.env,
+      });
+      await prisma.systemSettings.upsert({
+        where: { id: 'global-settings' },
+        create: { id: 'global-settings' },
+        update: {},
+      });
+      console.log('[DB] Schema tables synchronized successfully!');
+    } catch (pushErr: any) {
+      console.error('[DB] Schema sync warning:', pushErr.message);
+    }
+  }
 
   const server = app.listen(PORT, () => {
     console.log(`\n🚀 CommitFlow AI Server`);
