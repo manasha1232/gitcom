@@ -1,5 +1,6 @@
 import app from './app';
 import { prisma } from './prisma';
+import { schedulerService } from './services/scheduler';
 import { execSync } from 'child_process';
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
@@ -29,6 +30,21 @@ async function main() {
     } catch (pushErr: any) {
       console.error('[DB] Schema sync warning:', pushErr.message);
     }
+  }
+
+  // Auto-resume all in-progress projects on server boot
+  try {
+    const runningProjects = await prisma.project.findMany({
+      where: { status: 'RUNNING' },
+    });
+    for (const p of runningProjects) {
+      if (p.overallProgress < 100) {
+        console.log(`[Scheduler] Auto-resuming in-progress project: "${p.name}" (${p.overallProgress}% complete)`);
+        schedulerService.startProject(p.id).catch(() => {});
+      }
+    }
+  } catch (e: any) {
+    console.log('[Scheduler] Auto-resume check notice:', e.message);
   }
 
   const server = app.listen(PORT, () => {
