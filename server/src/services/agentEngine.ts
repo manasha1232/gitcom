@@ -18,7 +18,11 @@ export class AgentEngine {
   private baseReposDir: string;
 
   constructor() {
-    this.baseReposDir = path.resolve(process.cwd(), '..', 'repositories');
+    if (fs.existsSync('/data')) {
+      this.baseReposDir = '/data/repositories';
+    } else {
+      this.baseReposDir = path.resolve(process.cwd(), '..', 'repositories');
+    }
     if (!fs.existsSync(this.baseReposDir)) {
       fs.mkdirSync(this.baseReposDir, { recursive: true });
     }
