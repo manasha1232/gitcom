@@ -17,6 +17,7 @@ const createProjectSchema = z.object({
 // POST /api/projects
 export async function createProject(req: Request, res: Response) {
   try {
+    const userId = (req.headers['x-user-id'] as string) || undefined;
     const body = createProjectSchema.parse(req.body);
     const totalPlannedCommits = body.durationDays * body.commitsPerDay;
 
@@ -29,6 +30,7 @@ export async function createProject(req: Request, res: Response) {
         totalPlannedCommits,
         githubRepoUrl: body.githubRepoUrl || null,
         githubBranch: body.githubBranch,
+        userId: userId || null,
         status: 'IDLE',
       },
     });
@@ -48,7 +50,9 @@ export async function createProject(req: Request, res: Response) {
 // GET /api/projects
 export async function listProjects(req: Request, res: Response) {
   try {
+    const userId = (req.headers['x-user-id'] as string) || undefined;
     const projects = await prisma.project.findMany({
+      where: userId ? { OR: [{ userId }, { userId: null }] } : undefined,
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { commits: true } },

@@ -1,8 +1,9 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, FolderGit2, Plus, Settings, GitBranch,
-  Terminal, Activity, Layers, GitCommit, ChevronRight
+  Terminal, Activity, Layers, GitCommit, ChevronRight, LogOut, User
 } from 'lucide-react';
 
 const mainNavItems = [
@@ -25,6 +26,7 @@ const systemNavItems = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const renderLink = (to: string, Icon: any, label: string) => {
     const isActive = to === '/'
@@ -88,13 +90,37 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* Footer status */}
-      <div className="p-4 border-t border-[#1a2235]">
-        <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+      {/* Active User Footer Profile & Switcher */}
+      <div className="p-3 border-t border-[#1a2235] space-y-2">
+        {user ? (
+          <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-zinc-900/80 border border-zinc-800">
+            <div className="flex items-center gap-2 min-w-0">
+              <img
+                src={user.avatarUrl || `https://github.com/${user.githubUsername}.png`}
+                alt={user.githubUsername}
+                className="w-7 h-7 rounded-full border border-indigo-500/40 shrink-0"
+              />
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-zinc-200 truncate">{user.githubUsername}</div>
+                <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Dashboard
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              title="Switch Account / Logout"
+              className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 transition-colors shrink-0"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        ) : null}
+
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <div className="min-w-0">
-            <div className="text-xs text-emerald-400 font-medium truncate">AI Engine Active</div>
-            <div className="text-[10px] text-zinc-500 font-mono truncate">localhost:5000</div>
+            <div className="text-[11px] text-emerald-400 font-medium truncate">AI Engine Active</div>
           </div>
         </div>
       </div>

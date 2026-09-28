@@ -17,10 +17,14 @@ const settingsSchema = z.object({
 // GET /api/settings
 export async function getSettings(req: Request, res: Response) {
   try {
-    let settings = await prisma.systemSettings.findFirst();
+    const userId = (req.headers['x-user-id'] as string) || undefined;
+    let settings = userId
+      ? await prisma.systemSettings.findFirst({ where: { userId } })
+      : await prisma.systemSettings.findFirst();
+
     if (!settings) {
       settings = await prisma.systemSettings.create({
-        data: { id: 'global-settings' },
+        data: { id: userId ? `settings-${userId}` : 'global-settings', userId: userId || null },
       });
     }
 
@@ -42,11 +46,14 @@ export async function getSettings(req: Request, res: Response) {
 // PUT /api/settings
 export async function updateSettings(req: Request, res: Response) {
   try {
+    const userId = (req.headers['x-user-id'] as string) || undefined;
     const body = settingsSchema.parse(req.body);
 
+    const settingId = userId ? `settings-${userId}` : 'global-settings';
+
     const settings = await prisma.systemSettings.upsert({
-      where: { id: 'global-settings' },
-      create: { id: 'global-settings', ...body },
+      where: { id: settingId },
+      create: { id: settingId, userId: userId || null, ...body },
       update: body,
     });
 
@@ -62,15 +69,19 @@ export async function updateSettings(req: Request, res: Response) {
 // GET /api/dashboard/stats
 export async function getDashboardStats(req: Request, res: Response) {
   try {
+    const userId = (req.headers['x-user-id'] as string) || undefined;
+    const projectWhere = userId ? { OR: [{ userId }, { userId: null }] } : undefined;
+
     const [totalProjects, activeProjects, completedProjects, totalCommits, totalLogs] = await Promise.all([
-      prisma.project.count(),
-      prisma.project.count({ where: { status: 'RUNNING' } }),
-      prisma.project.count({ where: { status: 'COMPLETED' } }),
-      prisma.commit.count(),
-      prisma.executionLog.count(),
+      prisma.project.count({ where: projectWhere }),
+      prisma.project.count({ where: { ...projectWhere, status: 'RUNNING' } }),
+      prisma.project.count({ where: { ...projectWhere, status: 'COMPLETED' } }),
+      prisma.commit.count({ where: userId ? { project: projectWhere } : undefined }),
+      prisma.executionLog.count({ where: userId ? { project: projectWhere } : undefined }),
     ]);
 
     const recentProjects = await prisma.project.findMany({
+      where: projectWhere,
       take: 5,
       orderBy: { updatedAt: 'desc' },
       select: {

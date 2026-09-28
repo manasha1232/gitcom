@@ -5,6 +5,7 @@ import 'dotenv/config';
 
 import projectRoutes from './routes/project.routes';
 import githubRoutes from './routes/github.routes';
+import authRoutes from './routes/auth.routes';
 import { getSettings, updateSettings, getDashboardStats } from './controllers/settings.controller';
 import { sseService } from './services/sseService';
 import { prisma } from './prisma';
@@ -23,6 +24,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/github', githubRoutes);
 app.get('/api/settings', getSettings);

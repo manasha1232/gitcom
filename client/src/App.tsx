@@ -11,26 +11,22 @@ import CommitTimeline from './pages/CommitTimeline';
 import LogsConsole from './pages/LogsConsole';
 import RepoSettings from './pages/RepoSettings';
 import Settings from './pages/Settings';
+import { Login } from './pages/Login';
 import { SSEProvider } from './contexts/SSEContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-function AppLayout({ children }: { children: React.ReactNode }) {
+function AuthenticatedApp() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Login />;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#070a10]">
       <Sidebar />
       <main className="ml-56 flex-1 overflow-y-auto bg-[#070a10] text-zinc-100">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-export default function App() {
-  return (
-    <SSEProvider>
-      <BrowserRouter>
-        <AppLayout>
           <Routes>
             {/* 1. Dashboard */}
             <Route path="/" element={<Dashboard />} />
@@ -79,8 +75,20 @@ export default function App() {
               }
             />
           </Routes>
-        </AppLayout>
-      </BrowserRouter>
-    </SSEProvider>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <SSEProvider>
+        <BrowserRouter>
+          <AuthenticatedApp />
+        </BrowserRouter>
+      </SSEProvider>
+    </AuthProvider>
   );
 }

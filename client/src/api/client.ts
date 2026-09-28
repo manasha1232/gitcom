@@ -7,9 +7,18 @@ async function request<T>(
   body?: any,
   options?: RequestInit
 ): Promise<T> {
+  const activeUser = localStorage.getItem('commitflow_active_user');
+  let userIdHeader = {};
+  if (activeUser) {
+    try {
+      const u = JSON.parse(activeUser);
+      if (u?.id) userIdHeader = { 'x-user-id': u.id };
+    } catch {}
+  }
+
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json', ...userIdHeader, ...options?.headers },
     body: body ? JSON.stringify(body) : undefined,
     ...options,
   });
