@@ -51,11 +51,28 @@ export async function updateSettings(req: Request, res: Response) {
 
     const settingId = userId ? `settings-${userId}` : 'global-settings';
 
+    // Filter out masked secrets so existing unmasked tokens in DB aren't corrupted
+    const cleanUpdate: any = { ...body };
+    if (cleanUpdate.githubToken && cleanUpdate.githubToken.includes('...')) {
+      delete cleanUpdate.githubToken;
+    }
+    if (cleanUpdate.aiApiKey && cleanUpdate.aiApiKey.includes('...')) {
+      delete cleanUpdate.aiApiKey;
+    }
+
     const settings = await prisma.systemSettings.upsert({
       where: { id: settingId },
       create: { id: settingId, userId: userId || null, ...body },
-      update: body,
+      update: cleanUpdate,
     });
+
+    // Sync token to User record
+    if (userId && cleanUpdate.githubToken) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { githubToken: cleanUpdate.githubToken },
+      }).catch(() => {});
+    }
 
     res.json({ success: true, data: { message: 'Settings updated', id: settings.id } });
   } catch (err: any) {
