@@ -253,15 +253,25 @@ export class AgentEngine {
       });
 
       // STEP 7: Optional Push to GitHub
-      const settings = await prisma.systemSettings.findFirst();
-      if (settings?.autoPushOnCommit && project.githubRepoUrl) {
+      const userSettings = project.userId ? await prisma.systemSettings.findFirst({ where: { userId: project.userId } }) : null;
+      const globalSettings = await prisma.systemSettings.findFirst();
+      const shouldAutoPush = userSettings?.autoPushOnCommit ?? globalSettings?.autoPushOnCommit;
+      if (shouldAutoPush && project.githubRepoUrl) {
+        let pushToken = userSettings?.githubToken;
+        if (!pushToken && project.userId) {
+          const u = await prisma.user.findUnique({ where: { id: project.userId } });
+          pushToken = u?.githubToken || undefined;
+        }
+        if (!pushToken) {
+          pushToken = globalSettings?.githubToken || process.env.MANASHA_GITHUB_TOKEN || undefined;
+        }
         await this.setAgentState(projectId, 'PUSHING', `Pushing to GitHub origin/${project.githubBranch}...`);
         await this.log(projectId, 'INFO', 'PUSH', `Pushing commit ${commitResult.shortHash} to GitHub remote...`);
         const pushRes = await gitService.pushBranch(
           repoPath,
           project.githubBranch,
           project.githubRepoUrl,
-          settings?.githubToken || undefined
+          pushToken
         );
         if (pushRes.success) {
           await this.log(projectId, 'SUCCESS', 'PUSH', `Push successful: ${pushRes.message}`);

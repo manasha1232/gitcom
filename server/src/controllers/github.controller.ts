@@ -155,21 +155,39 @@ export async function pushToGitHub(req: Request, res: Response) {
   try {
     const { projectId, branch, force } = pushSchema.parse(req.body);
 
-    const [project, settings] = await Promise.all([
-      prisma.project.findUnique({ where: { id: projectId }, include: { repository: true } }),
-      prisma.systemSettings.findFirst(),
-    ]);
+    const project = await prisma.project.findUnique({ where: { id: projectId }, include: { repository: true } });
 
     if (!project) return res.status(404).json({ success: false, error: 'Project not found' });
     if (!project.localRepoPath) return res.status(400).json({ success: false, error: 'Repository not initialized' });
     if (!project.githubRepoUrl) return res.status(400).json({ success: false, error: 'No GitHub repo URL configured' });
+
+    // Retrieve GitHub token across user session, project user, system settings, or env
+    const rawUserId = (req.headers['x-user-id'] as string) || undefined;
+    let token: string | undefined = undefined;
+
+    if (rawUserId) {
+      const u = await prisma.user.findFirst({
+        where: { OR: [{ id: rawUserId }, { githubUsername: rawUserId }] },
+      });
+      token = u?.githubToken || undefined;
+    }
+    if (!token && project.userId) {
+      const u = await prisma.user.findUnique({ where: { id: project.userId } });
+      token = u?.githubToken || undefined;
+    }
+    if (!token) {
+      const settings = await prisma.systemSettings.findFirst({
+        where: { githubToken: { not: undefined } },
+      });
+      token = settings?.githubToken || process.env.MANASHA_GITHUB_TOKEN || undefined;
+    }
 
     const targetBranch = branch || project.githubBranch;
     const result = await gitService.pushBranch(
       project.localRepoPath,
       targetBranch,
       project.githubRepoUrl,
-      settings?.githubToken || undefined,
+      token,
       Boolean(force)
     );
 
