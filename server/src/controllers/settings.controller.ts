@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { z } from 'zod';
+import { ensureUserId } from '../utils/userUtils';
 
 const settingsSchema = z.object({
   githubToken: z.string().optional(),
@@ -17,7 +18,8 @@ const settingsSchema = z.object({
 // GET /api/settings
 export async function getSettings(req: Request, res: Response) {
   try {
-    const userId = (req.headers['x-user-id'] as string) || undefined;
+    const rawUserId = (req.headers['x-user-id'] as string) || undefined;
+    const userId = await ensureUserId(rawUserId);
     let settings = userId
       ? await prisma.systemSettings.findFirst({ where: { userId } })
       : await prisma.systemSettings.findFirst();
@@ -46,7 +48,8 @@ export async function getSettings(req: Request, res: Response) {
 // PUT /api/settings
 export async function updateSettings(req: Request, res: Response) {
   try {
-    const userId = (req.headers['x-user-id'] as string) || undefined;
+    const rawUserId = (req.headers['x-user-id'] as string) || undefined;
+    const userId = await ensureUserId(rawUserId);
     const body = settingsSchema.parse(req.body);
 
     const settingId = userId ? `settings-${userId}` : 'global-settings';
@@ -86,7 +89,8 @@ export async function updateSettings(req: Request, res: Response) {
 // GET /api/dashboard/stats
 export async function getDashboardStats(req: Request, res: Response) {
   try {
-    const userId = (req.headers['x-user-id'] as string) || undefined;
+    const rawUserId = (req.headers['x-user-id'] as string) || undefined;
+    const userId = await ensureUserId(rawUserId);
     const projectWhere = userId ? { OR: [{ userId }, { userId: null }] } : undefined;
 
     const [totalProjects, activeProjects, completedProjects, totalCommits, totalLogs] = await Promise.all([

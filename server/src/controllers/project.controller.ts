@@ -4,6 +4,7 @@ import { aiPlannerService } from '../services/aiPlanner';
 import { schedulerService } from '../services/scheduler';
 import { agentEngine } from '../services/agentEngine';
 import { z } from 'zod';
+import { ensureUserId } from '../utils/userUtils';
 
 const createProjectSchema = z.object({
   name: z.string().min(2).max(100),
@@ -17,7 +18,8 @@ const createProjectSchema = z.object({
 // POST /api/projects
 export async function createProject(req: Request, res: Response) {
   try {
-    const userId = (req.headers['x-user-id'] as string) || undefined;
+    const rawUserId = (req.headers['x-user-id'] as string) || undefined;
+    const userId = await ensureUserId(rawUserId);
     const body = createProjectSchema.parse(req.body);
     const totalPlannedCommits = body.durationDays * body.commitsPerDay;
 
@@ -50,7 +52,8 @@ export async function createProject(req: Request, res: Response) {
 // GET /api/projects
 export async function listProjects(req: Request, res: Response) {
   try {
-    const userId = (req.headers['x-user-id'] as string) || undefined;
+    const rawUserId = (req.headers['x-user-id'] as string) || undefined;
+    const userId = await ensureUserId(rawUserId);
     const projects = await prisma.project.findMany({
       where: userId ? { OR: [{ userId }, { userId: null }] } : undefined,
       orderBy: { createdAt: 'desc' },
@@ -328,7 +331,8 @@ export async function getCommitDiff(req: Request, res: Response) {
 // POST /api/projects/import-github
 export async function importProjectFromGitHub(req: Request, res: Response) {
   try {
-    const userId = (req.headers['x-user-id'] as string) || undefined;
+    const rawUserId = (req.headers['x-user-id'] as string) || undefined;
+    const userId = await ensureUserId(rawUserId);
     const { githubRepoUrl, name: customName, description: customDesc } = req.body;
 
     if (!githubRepoUrl) {

@@ -2,6 +2,7 @@ import app from './app';
 import { prisma } from './prisma';
 import { schedulerService } from './services/scheduler';
 import { execSync } from 'child_process';
+import { PRECONFIGURED_USERS } from './controllers/auth.controller';
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
 
@@ -30,6 +31,30 @@ async function main() {
     } catch (pushErr: any) {
       console.error('[DB] Schema sync warning:', pushErr.message);
     }
+  }
+
+  // Seed default preconfigured users
+  try {
+    for (const u of PRECONFIGURED_USERS) {
+      await prisma.user.upsert({
+        where: { githubUsername: u.username },
+        create: {
+          githubUsername: u.username,
+          name: u.name,
+          email: u.email,
+          avatarUrl: u.avatarUrl,
+          githubToken: u.token,
+        },
+        update: {
+          name: u.name,
+          email: u.email,
+          avatarUrl: u.avatarUrl,
+          githubToken: u.token || undefined,
+        },
+      });
+    }
+  } catch (e: any) {
+    console.log('[DB] User seeding notice:', e.message);
   }
 
   // Auto-resume all in-progress projects on server boot
