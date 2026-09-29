@@ -130,7 +130,8 @@ coverage/
     repoPath: string,
     message: string,
     authorName = 'manasha1232',
-    authorEmail = '209326007+manasha1232@users.noreply.github.com'
+    authorEmail = '209326007+manasha1232@users.noreply.github.com',
+    customDate?: string
   ): Promise<CommitResult> {
     const git = this.getGit(repoPath);
 
@@ -147,7 +148,7 @@ coverage/
       // Create a small metadata watermark or touch README to ensure genuine valid commit
       const metaPath = path.join(repoPath, '.commitflow-build.json');
       const metaData = {
-        lastCommitTime: new Date().toISOString(),
+        lastCommitTime: customDate || new Date().toISOString(),
         buildStatus: 'VERIFIED_INCREMENTAL_BUILD',
         commitMessage: message,
       };
@@ -155,9 +156,14 @@ coverage/
       await git.add('.commitflow-build.json');
     }
 
-    const commitSummary = await git.commit(message, undefined, {
+    const options: Record<string, string> = {
       '--author': `"${authorName} <${authorEmail}>"`,
-    });
+    };
+    if (customDate) {
+      options['--date'] = `"${customDate}"`;
+    }
+
+    const commitSummary = await git.commit(message, undefined, options);
     const commitHash = (await git.revparse(['HEAD'])).trim();
     const shortHash = commitHash.slice(0, 7);
 
