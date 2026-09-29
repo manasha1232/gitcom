@@ -255,7 +255,7 @@ export class AgentEngine {
       // STEP 7: Optional Push to GitHub
       const userSettings = project.userId ? await prisma.systemSettings.findFirst({ where: { userId: project.userId } }) : null;
       const globalSettings = await prisma.systemSettings.findFirst();
-      const shouldAutoPush = userSettings?.autoPushOnCommit ?? globalSettings?.autoPushOnCommit;
+      const shouldAutoPush = project.githubRepoUrl ? (userSettings?.autoPushOnCommit ?? globalSettings?.autoPushOnCommit ?? true) : false;
       if (shouldAutoPush && project.githubRepoUrl) {
         let pushToken = userSettings?.githubToken;
         if (!pushToken && project.userId) {

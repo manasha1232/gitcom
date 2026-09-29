@@ -218,7 +218,14 @@ coverage/
       await git.push(args);
       return { success: true, message: `Pushed successfully to origin/${branch}` };
     } catch (err: any) {
-      return { success: false, message: err.message || 'Push failed' };
+      console.log(`[GitService] Standard push failed: ${err.message}. Retrying with --force fallback...`);
+      try {
+        await git.push(['-u', 'origin', branch, '--force']);
+        return { success: true, message: `Force pushed successfully to origin/${branch}` };
+      } catch (forceErr: any) {
+        console.error(`[GitService] Force push failed:`, forceErr);
+        return { success: false, message: forceErr.message || err.message || 'Push failed' };
+      }
     }
   }
 
