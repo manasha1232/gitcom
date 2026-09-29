@@ -6,8 +6,6 @@ WORKDIR /app
 # Install git, openssl, and build dependencies for Alpine
 RUN apk add --no-cache git python3 make g++ openssl libc6-compat
 
-ENV DATABASE_URL="file:./dev.db"
-
 # Copy package descriptors
 COPY server/package*.json ./server/
 COPY client/package*.json ./client/
@@ -33,11 +31,8 @@ WORKDIR /app
 # Install runtime dependencies for Alpine
 RUN apk add --no-cache git openssl libc6-compat
 
-RUN mkdir -p /data
-
 ENV NODE_ENV=production
 ENV PORT=5000
-ENV DATABASE_URL="file:/data/dev.db"
 
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/client/dist ./client/dist
