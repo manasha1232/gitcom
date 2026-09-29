@@ -32,8 +32,17 @@ export class AgentEngine {
     return path.join(this.baseReposDir, projectId);
   }
 
-  async getGitAuthorConfig(): Promise<{ authorName: string; authorEmail: string }> {
+  async getGitAuthorConfig(userId?: string): Promise<{ authorName: string; authorEmail: string }> {
     try {
+      if (userId) {
+        const u = await prisma.user.findUnique({ where: { id: userId } });
+        const uSettings = await prisma.systemSettings.findFirst({ where: { userId } });
+        if (u || uSettings) {
+          const authorName = uSettings?.gitAuthorName || u?.githubUsername || u?.name || 'manasha1232';
+          const authorEmail = uSettings?.gitAuthorEmail || u?.email || '209326007+manasha1232@users.noreply.github.com';
+          return { authorName, authorEmail };
+        }
+      }
       const settings = await prisma.systemSettings.findFirst();
       const authorName = settings?.gitAuthorName || settings?.githubUsername || 'manasha1232';
       const authorEmail = settings?.gitAuthorEmail || '209326007+manasha1232@users.noreply.github.com';
@@ -212,7 +221,7 @@ export class AgentEngine {
 
       const commitPrefix = this.getCommitPrefix(task.category);
       const commitMessage = `${commitPrefix}: ${task.title.toLowerCase()}`;
-      const { authorName, authorEmail } = await this.getGitAuthorConfig();
+      const { authorName, authorEmail } = await this.getGitAuthorConfig(project.userId || undefined);
       const commitResult = await gitService.createCommit(repoPath, commitMessage, authorName, authorEmail);
       await this.log(
         projectId,
