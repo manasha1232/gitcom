@@ -222,9 +222,7 @@ export class AgentEngine {
       const commitPrefix = this.getCommitPrefix(task.category);
       const commitMessage = `${commitPrefix}: ${task.title.toLowerCase()}`;
       const { authorName, authorEmail } = await this.getGitAuthorConfig(project.userId || undefined);
-      const existingCommitsCount = await prisma.commit.count({ where: { projectId } });
-      const commitDate = new Date(Date.now() - Math.max(0, 30 - existingCommitsCount) * 6 * 60 * 1000).toISOString();
-      const commitResult = await gitService.createCommit(repoPath, commitMessage, authorName, authorEmail, commitDate);
+      const commitResult = await gitService.createCommit(repoPath, commitMessage, authorName, authorEmail);
       await this.log(
         projectId,
         'SUCCESS',

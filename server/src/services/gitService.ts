@@ -130,8 +130,7 @@ coverage/
     repoPath: string,
     message: string,
     authorName = 'manasha1232',
-    authorEmail = '209326007+manasha1232@users.noreply.github.com',
-    customDate?: string
+    authorEmail = '209326007+manasha1232@users.noreply.github.com'
   ): Promise<CommitResult> {
     const git = this.getGit(repoPath);
 
@@ -148,7 +147,7 @@ coverage/
       // Create a small metadata watermark or touch README to ensure genuine valid commit
       const metaPath = path.join(repoPath, '.commitflow-build.json');
       const metaData = {
-        lastCommitTime: customDate || new Date().toISOString(),
+        lastCommitTime: new Date().toISOString(),
         buildStatus: 'VERIFIED_INCREMENTAL_BUILD',
         commitMessage: message,
       };
@@ -156,14 +155,9 @@ coverage/
       await git.add('.commitflow-build.json');
     }
 
-    const options: Record<string, string> = {
+    const commitSummary = await git.commit(message, undefined, {
       '--author': `"${authorName} <${authorEmail}>"`,
-    };
-    if (customDate) {
-      options['--date'] = `"${customDate}"`;
-    }
-
-    const commitSummary = await git.commit(message, undefined, options);
+    });
     const commitHash = (await git.revparse(['HEAD'])).trim();
     const shortHash = commitHash.slice(0, 7);
 
@@ -224,14 +218,7 @@ coverage/
       await git.push(args);
       return { success: true, message: `Pushed successfully to origin/${branch}` };
     } catch (err: any) {
-      console.log(`[GitService] Standard push failed: ${err.message}. Retrying with --force fallback...`);
-      try {
-        await git.push(['-u', 'origin', branch, '--force']);
-        return { success: true, message: `Force pushed successfully to origin/${branch}` };
-      } catch (forceErr: any) {
-        console.error(`[GitService] Force push failed:`, forceErr);
-        return { success: false, message: forceErr.message || err.message || 'Push failed' };
-      }
+      return { success: false, message: err.message || 'Push failed' };
     }
   }
 
