@@ -57,7 +57,7 @@ coverage/
       fs.writeFileSync(path.join(repoPath, '.gitignore'), gitignoreContent, 'utf-8');
       await git.add('.gitignore');
       const res = await git.commit('chore: initialize repository and ignore patterns', undefined, {
-        '--author': `"${authorName} <${authorEmail}>"`,
+        '--author': `${authorName} <${authorEmail}>`,
       });
       const commitHash = await git.revparse(['HEAD']);
       return { initialCommitHash: commitHash.trim() };
@@ -156,7 +156,7 @@ coverage/
     }
 
     const commitSummary = await git.commit(message, undefined, {
-      '--author': `"${authorName} <${authorEmail}>"`,
+      '--author': `${authorName} <${authorEmail}>`,
     });
     const commitHash = (await git.revparse(['HEAD'])).trim();
     const shortHash = commitHash.slice(0, 7);
