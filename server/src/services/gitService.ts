@@ -73,9 +73,10 @@ coverage/
     const git = this.getGit(repoPath);
     let targetUrl = remoteUrl;
 
-    if (token && remoteUrl.includes('github.com')) {
-      const cleanUrl = remoteUrl.replace(/^https?:\/\//, '').replace(/.*@github\.com/, 'github.com');
-      targetUrl = `https://${token}@${cleanUrl}`;
+    const authToken = token || process.env.MANASHA_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    if (authToken && remoteUrl.includes('github.com')) {
+      const cleanUrl = remoteUrl.replace(/^https?:\/\//, '').replace(/.*@github\.com\/?/, 'github.com/');
+      targetUrl = `https://${authToken}@${cleanUrl}`;
     }
 
     const remotes = await git.getRemotes();
@@ -208,8 +209,9 @@ coverage/
   ): Promise<{ success: boolean; message: string }> {
     const git = this.getGit(repoPath);
 
+    const authToken = token || process.env.MANASHA_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
     if (remoteUrl) {
-      await this.setRemote(repoPath, remoteUrl, token);
+      await this.setRemote(repoPath, remoteUrl, authToken);
     }
 
     try {
@@ -218,6 +220,7 @@ coverage/
       await git.push(args);
       return { success: true, message: `Pushed successfully to origin/${branch}` };
     } catch (err: any) {
+      console.error('[GitService] pushBranch error:', err.message);
       return { success: false, message: err.message || 'Push failed' };
     }
   }
