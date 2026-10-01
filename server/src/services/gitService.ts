@@ -237,6 +237,22 @@ coverage/
       return { success: true, message: `Pushed successfully to origin/${branch}` };
     } catch (err: any) {
       console.error('[GitService] pushBranch error:', err.message);
+      if (
+        !force &&
+        err.message &&
+        (err.message.includes('fetch first') ||
+          err.message.includes('non-fast-forward') ||
+          err.message.includes('rejected') ||
+          err.message.includes('diverged'))
+      ) {
+        console.log('[GitService] Remote contains initial commits; retrying push with --force flag...');
+        try {
+          await git.push(['-u', 'origin', branch, '--force']);
+          return { success: true, message: `Pushed successfully to origin/${branch}` };
+        } catch (forceErr: any) {
+          return { success: false, message: forceErr.message || 'Push failed after force retry' };
+        }
+      }
       return { success: false, message: err.message || 'Push failed' };
     }
   }
