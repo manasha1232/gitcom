@@ -11,8 +11,8 @@ async function main() {
   try {
     await prisma.systemSettings.upsert({
       where: { id: 'global-settings' },
-      create: { id: 'global-settings' },
-      update: {},
+      create: { id: 'global-settings', autoPushOnCommit: true },
+      update: { autoPushOnCommit: true },
     });
   } catch (err: any) {
     console.log('[DB] SystemSettings table missing. Running schema db push...');
@@ -24,8 +24,8 @@ async function main() {
       });
       await prisma.systemSettings.upsert({
         where: { id: 'global-settings' },
-        create: { id: 'global-settings' },
-        update: {},
+        create: { id: 'global-settings', autoPushOnCommit: true },
+        update: { autoPushOnCommit: true },
       });
       console.log('[DB] Schema tables synchronized successfully!');
     } catch (pushErr: any) {
