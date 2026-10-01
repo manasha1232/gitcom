@@ -3,12 +3,13 @@ import { prisma } from './prisma';
 import { schedulerService } from './services/scheduler';
 import { execSync } from 'child_process';
 import { PRECONFIGURED_USERS } from './controllers/auth.controller';
+import { getFallbackGitHubToken } from './services/gitService';
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
 
 async function main() {
   // Ensure database schema tables exist
-  const defaultToken = process.env.MANASHA_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  const defaultToken = getFallbackGitHubToken();
   try {
     await prisma.systemSettings.upsert({
       where: { id: 'global-settings' },

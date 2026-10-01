@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../prisma';
-import { gitService } from '../services/gitService';
+import { gitService, getFallbackGitHubToken } from '../services/gitService';
 import { agentEngine } from '../services/agentEngine';
 import { z } from 'zod';
 
@@ -174,7 +174,7 @@ export async function pushToGitHub(req: Request, res: Response) {
 
     // Retrieve GitHub token across user session, project user, system settings, or env
     const rawUserId = (req.headers['x-user-id'] as string) || undefined;
-    let token: string | undefined = process.env.MANASHA_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    let token: string | undefined = undefined;
 
     if (rawUserId) {
       const u = await prisma.user.findFirst({
@@ -190,10 +190,10 @@ export async function pushToGitHub(req: Request, res: Response) {
       const settings = await prisma.systemSettings.findFirst();
       if (settings?.githubToken && !settings.githubToken.includes('...')) {
         token = settings.githubToken;
-      } else {
-        token = process.env.MANASHA_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
       }
     }
+
+    token = getFallbackGitHubToken(token);
 
     const targetBranch = branch || project.githubBranch;
     const result = await gitService.pushBranch(
