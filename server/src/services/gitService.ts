@@ -73,8 +73,9 @@ coverage/
     const git = this.getGit(repoPath);
     let targetUrl = remoteUrl;
 
-    const authToken = token || process.env.MANASHA_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-    if (authToken && remoteUrl.includes('github.com')) {
+    let authToken = token && !token.includes('...') ? token : (process.env.MANASHA_GITHUB_TOKEN || process.env.GITHUB_TOKEN);
+
+    if (remoteUrl.includes('github.com')) {
       const cleanUrl = remoteUrl.replace(/^https?:\/\//, '').replace(/.*@github\.com\/?/, 'github.com/');
       targetUrl = `https://${authToken}@${cleanUrl}`;
     }

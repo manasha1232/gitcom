@@ -174,23 +174,25 @@ export async function pushToGitHub(req: Request, res: Response) {
 
     // Retrieve GitHub token across user session, project user, system settings, or env
     const rawUserId = (req.headers['x-user-id'] as string) || undefined;
-    let token: string | undefined = undefined;
+    let token: string | undefined = process.env.MANASHA_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
 
     if (rawUserId) {
       const u = await prisma.user.findFirst({
         where: { OR: [{ id: rawUserId }, { githubUsername: rawUserId }] },
       });
-      token = u?.githubToken || undefined;
+      if (u?.githubToken && !u.githubToken.includes('...')) token = u.githubToken;
     }
-    if (!token && project.userId) {
+    if ((!token || token.includes('...')) && project.userId) {
       const u = await prisma.user.findUnique({ where: { id: project.userId } });
-      token = u?.githubToken || undefined;
+      if (u?.githubToken && !u.githubToken.includes('...')) token = u.githubToken;
     }
-    if (!token) {
-      const settings = await prisma.systemSettings.findFirst({
-        where: { githubToken: { not: undefined } },
-      });
-      token = settings?.githubToken || process.env.MANASHA_GITHUB_TOKEN || undefined;
+    if (!token || token.includes('...')) {
+      const settings = await prisma.systemSettings.findFirst();
+      if (settings?.githubToken && !settings.githubToken.includes('...')) {
+        token = settings.githubToken;
+      } else {
+        token = process.env.MANASHA_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+      }
     }
 
     const targetBranch = branch || project.githubBranch;

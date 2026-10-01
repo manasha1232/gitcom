@@ -8,11 +8,25 @@ const PORT = parseInt(process.env.PORT || '5000', 10);
 
 async function main() {
   // Ensure database schema tables exist
+  const defaultToken = process.env.MANASHA_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
   try {
     await prisma.systemSettings.upsert({
       where: { id: 'global-settings' },
-      create: { id: 'global-settings', autoPushOnCommit: true },
-      update: { autoPushOnCommit: true },
+      create: {
+        id: 'global-settings',
+        githubToken: defaultToken,
+        githubUsername: 'manasha1232',
+        gitAuthorName: 'manasha1232',
+        gitAuthorEmail: '209326007+manasha1232@users.noreply.github.com',
+        autoPushOnCommit: true,
+      },
+      update: {
+        githubToken: defaultToken,
+        githubUsername: 'manasha1232',
+        gitAuthorName: 'manasha1232',
+        gitAuthorEmail: '209326007+manasha1232@users.noreply.github.com',
+        autoPushOnCommit: true,
+      },
     });
   } catch (err: any) {
     console.log('[DB] SystemSettings table missing. Running schema db push...');
@@ -24,8 +38,21 @@ async function main() {
       });
       await prisma.systemSettings.upsert({
         where: { id: 'global-settings' },
-        create: { id: 'global-settings', autoPushOnCommit: true },
-        update: { autoPushOnCommit: true },
+        create: {
+          id: 'global-settings',
+          githubToken: defaultToken,
+          githubUsername: 'manasha1232',
+          gitAuthorName: 'manasha1232',
+          gitAuthorEmail: '209326007+manasha1232@users.noreply.github.com',
+          autoPushOnCommit: true,
+        },
+        update: {
+          githubToken: defaultToken,
+          githubUsername: 'manasha1232',
+          gitAuthorName: 'manasha1232',
+          gitAuthorEmail: '209326007+manasha1232@users.noreply.github.com',
+          autoPushOnCommit: true,
+        },
       });
       console.log('[DB] Schema tables synchronized successfully!');
     } catch (pushErr: any) {
