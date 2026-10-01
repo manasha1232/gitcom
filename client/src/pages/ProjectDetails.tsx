@@ -223,21 +223,47 @@ export default function ProjectDetails() {
     }
   };
 
+  const [pushStatusMessage, setPushStatusMessage] = useState<{ type: 'success' | 'warning' | 'error'; text: string } | null>(null);
+
   const handlePushAll = async () => {
     if (!id) return;
     setPushLoading(true);
+    setPushStatusMessage(null);
     try {
+      let result: any = null;
       try {
-        await githubApi.push({ projectId: id });
+        result = await githubApi.push({ projectId: id });
       } catch (err: any) {
-        if (err.message?.includes('fetch first') || err.message?.includes('non-fast-forward') || err.message?.includes('rejected') || err.message?.includes('diverged')) {
-          await githubApi.push({ projectId: id, force: true });
+        if (
+          err.message?.includes('fetch first') ||
+          err.message?.includes('non-fast-forward') ||
+          err.message?.includes('rejected') ||
+          err.message?.includes('diverged')
+        ) {
+          result = await githubApi.push({ projectId: id, force: true });
         } else {
           throw err;
         }
       }
+
+      if (result && result.success === false) {
+        setPushStatusMessage({
+          type: 'warning',
+          text: `⚠️ Push Warning: ${result.message || 'Remote push could not be completed. Please verify GitHub permissions.'}`,
+        });
+      } else {
+        setPushStatusMessage({
+          type: 'success',
+          text: `✅ Pushed successfully to GitHub remote repository!`,
+        });
+      }
       await fetchCommits();
+      await fetchProject();
     } catch (err: any) {
+      setPushStatusMessage({
+        type: 'error',
+        text: `⚠️ Push Failed: ${err.message || 'Commits could not be pushed to GitHub. Check repository URL and connection.'}`,
+      });
       setError(err.message);
     } finally {
       setPushLoading(false);
@@ -316,6 +342,32 @@ export default function ProjectDetails() {
       {error && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
           <AlertTriangle size={14} /> {error}
+        </div>
+      )}
+
+      {pushStatusMessage && (
+        <div
+          className={clsx(
+            'flex items-center justify-between p-3.5 rounded-lg border text-xs font-mono transition-all',
+            pushStatusMessage.type === 'success' && 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300',
+            pushStatusMessage.type === 'warning' && 'bg-amber-500/10 border-amber-500/30 text-amber-300',
+            pushStatusMessage.type === 'error' && 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+          )}
+        >
+          <div className="flex items-center gap-2">
+            {pushStatusMessage.type === 'success' ? (
+              <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0" />
+            ) : (
+              <AlertTriangle size={14} className="text-amber-400 flex-shrink-0" />
+            )}
+            <span>{pushStatusMessage.text}</span>
+          </div>
+          <button
+            onClick={() => setPushStatusMessage(null)}
+            className="text-zinc-500 hover:text-zinc-300 ml-4 font-sans text-xs font-bold"
+          >
+            ✕
+          </button>
         </div>
       )}
 
